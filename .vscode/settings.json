@@ -2,5 +2,8 @@
   "lldb.displayFormat": "auto",
   "lldb.showDisassembly": "auto",
   "lldb.dereferencePointers": true,
-  "lldb.consoleMode": "commands"
+  "lldb.consoleMode": "commands",
+  "rust-analyzer.cargo.extraEnv": {
+    "RUSTFLAGS": "--cfg rust_analyzer"
+  }
 }

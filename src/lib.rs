@@ -275,11 +275,11 @@ mod tests {
   use super::*;
 
   #[allow(unused_macros)]
-  #[cfg(debug_assertions)]
+  #[cfg(any(rust_analyzer, debug_assertions))]
   macro_rules! lg {
       ($( $args:expr ),*) => { println!("{:>3}   {:>16}   {:<16} expected {}, got {}", $( $args ),* ); }
   }
-  #[cfg(not(debug_assertions))]
+  #[cfg(any(rust_analyzer, not(debug_assertions)))]
   macro_rules! lg {
     ($( $args:expr ),*) => {
       ()
