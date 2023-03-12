@@ -10,11 +10,13 @@ of [InterNetNews][inn] (INN).
 ## Usage
 
 ```toml
+# Cargo.toml
 [dependencies]
 uwildmat = "0.1"
 ```
 
 ```rust
+// your_code.rs
 use uwildmat::simple::uwildmat as uwildmat;
 
 let text = "foo";
