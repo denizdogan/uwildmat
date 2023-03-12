@@ -325,31 +325,49 @@ mod tests {
   }
 
   #[test]
-  fn arbitrary_regular_good() {
-    fn r(v: &str, p: &str) {
-      test_regular(1000, v, p, true);
-    }
-    r("", "");
-    r("a", "a");
-    r("abc", "abc");
-    r("abc,", "abc\\,");
-    r("abc,", "abc\\,,foo");
-    r("foo", "*foo*");
+  fn regular_comma_processing() {
+    assert_eq!(false, regular(",", ""));
+    assert_eq!(false, regular(",", ","));
+    assert_eq!(false, regular(",", ",,"));
+    assert_eq!(false, regular(",", ",,,"));
+    assert_eq!(true, regular(",", "\\,"));
+    assert_eq!(true, regular(",", "\\,,"));
+    assert_eq!(true, regular(",", ",\\,"));
+    assert_eq!(true, regular(",", "\\,,\\,"));
+    assert_eq!(true, regular(",", ",\\,,"));
   }
 
   #[test]
-  fn arbitrary_regular_bad() {
-    fn r(v: &str, p: &str) {
-      test_regular(1000, v, p, false);
-    }
-    r("abc", "");
-    r("abc", "a");
-    r("abc", "ab");
-    r("abc", "aaa");
-    r("abc", "bbb");
-    r("abc", "ccc");
-    r("abc,", "abc");
-    r("abc,", "abc\\,foo,yeah");
+  fn simple_comma_processing() {
+    assert_eq!(false, simple(",", ""));
+    assert_eq!(true, simple(",", ","));
+    assert_eq!(false, simple(",", ",,"));
+    assert_eq!(true, simple(",", "*,"));
+    assert_eq!(true, simple(",", ",*"));
+    assert_eq!(true, simple(",", "*"));
+    assert_eq!(true, simple(",", "**"));
+    assert_eq!(true, simple(",", "\\,"));
+    assert_eq!(true, simple(",", "*\\,"));
+    assert_eq!(true, simple(",", "\\,*"));
+  }
+
+  #[test]
+  fn regular_misc() {
+    assert_eq!(true, regular("", ""));
+    assert_eq!(true, regular("a", "a"));
+    assert_eq!(true, regular("abc", "abc"));
+    assert_eq!(true, regular("abc,", "abc\\,"));
+    assert_eq!(true, regular("abc,", "abc\\,,foo"));
+    assert_eq!(true, regular("foo", "*foo*"));
+
+    assert_eq!(false, regular("abc", ""));
+    assert_eq!(false, regular("abc", "a"));
+    assert_eq!(false, regular("abc", "ab"));
+    assert_eq!(false, regular("abc", "aaa"));
+    assert_eq!(false, regular("abc", "bbb"));
+    assert_eq!(false, regular("abc", "ccc"));
+    assert_eq!(false, regular("abc,", "abc"));
+    assert_eq!(false, regular("abc,", "abc\\,foo,yeah"));
   }
 
   #[test]
