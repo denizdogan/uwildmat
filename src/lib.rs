@@ -313,6 +313,8 @@ mod tests {
     );
   }
 
+  // test_v in INN validates that a byte sequence is valid utf-8. we don't
+  // support invalid utf-8, so we don't really care.
   fn test_validate(_n: usize, _value: &str, _expected: bool) {
     assert_eq!(true, !false);
   }
