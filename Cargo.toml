@@ -3,6 +3,10 @@ name = "uwildmat"
 version = "0.1.0"
 edition = "2021"
 build = "src/build.rs"
+license = "MIT"
+readme = "README.md"
+description = "Rust library for wildmat/uwildmat matching"
+repository = "https://github.com/denizdogan/uwildmat"
 
 [build-dependencies]
 regex = "1"
