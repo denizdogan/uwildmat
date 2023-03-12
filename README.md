@@ -12,7 +12,7 @@ of [InterNetNews][inn] (INN).
 ```toml
 # Cargo.toml
 [dependencies]
-uwildmat = "0.1"
+uwildmat = "0.2"
 ```
 
 ```rust
