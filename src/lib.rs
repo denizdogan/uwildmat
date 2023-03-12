@@ -29,6 +29,12 @@ impl Into<bool> for Uwildmat {
   }
 }
 
+impl Into<u8> for Uwildmat {
+  fn into(self) -> u8 {
+    self as u8
+  }
+}
+
 fn match_pattern(txt: &str, pat: &str) -> bool {
   let mut pat_i: usize = 0;
   let mut txt_i: usize = 0;
@@ -342,5 +348,19 @@ mod tests {
     r("abc", "ccc");
     r("abc,", "abc");
     r("abc,", "abc\\,foo,yeah");
+  }
+
+  #[test]
+  fn into_bool() {
+    assert_eq!(false, Uwildmat::Fail.into());
+    assert_eq!(true, Uwildmat::Match.into());
+    assert_eq!(false, Uwildmat::Poison.into());
+  }
+
+  #[test]
+  fn into_u8() {
+    assert_eq!(0 as u8, Uwildmat::Fail.into());
+    assert_eq!(1 as u8, Uwildmat::Match.into());
+    assert_eq!(2 as u8, Uwildmat::Poison.into());
   }
 }
