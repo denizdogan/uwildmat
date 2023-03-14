@@ -34,6 +34,8 @@ pub fn regular(text: &str, pat: &str) -> bool {
 }
 
 #[inline]
+pub fn simple(text: &str, pat: &str) -> bool {
+  return pat == "*" || match_pattern(text, pat);
 }
 
 #[inline]
@@ -43,11 +45,6 @@ pub fn poison(text: &str, pat: &str) -> Uwildmat {
   } else {
     return match_expression(text, pat, true);
   };
-}
-
-#[inline]
-pub fn simple(text: &str, pat: &str) -> bool {
-  return pat == "*" || match_pattern(text, pat);
 }
 
 fn match_pattern(txt: &str, pat: &str) -> bool {
