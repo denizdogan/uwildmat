@@ -400,6 +400,14 @@ mod tests {
   }
 
   #[test]
+  fn regular_utf8() {
+    assert_eq!(true, regular("†", "?")); // \xE2\x80\xA0
+    assert_eq!(true, regular("ᚻ", "[\u{16BA}-\u{16BC}]")); // \xE1\x9A\xBB
+    assert_eq!(true, regular("╳", "*")); // \xE2\x95\xB3
+    assert_eq!(true, regular("ข้", "??")); // \xE0\xB8\x82\xE0\xB9\x89
+  }
+
+  #[test]
   fn into_bool() {
     assert_eq!(false, Uwildmat::Fail.into());
     assert_eq!(true, Uwildmat::Match.into());
