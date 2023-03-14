@@ -1,6 +1,6 @@
 #![feature(test)]
 
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Uwildmat {
   #[default]
   Fail = 0,
