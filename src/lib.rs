@@ -1,10 +1,6 @@
 #![feature(test)]
 extern crate test;
 
-pub mod poison;
-pub mod regular;
-pub mod simple;
-
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub enum Uwildmat {
   #[default]
@@ -33,6 +29,25 @@ impl Into<u8> for Uwildmat {
   fn into(self) -> u8 {
     self as u8
   }
+}
+
+#[inline]
+pub fn regular(text: &str, pat: &str) -> bool {
+  return pat == "*" || match_expression(text, pat, false) == Uwildmat::Match;
+}
+
+#[inline]
+pub fn poison(text: &str, pat: &str) -> Uwildmat {
+  return if pat == "*" {
+    Uwildmat::Match
+  } else {
+    return match_expression(text, pat, true);
+  };
+}
+
+#[inline]
+pub fn simple(text: &str, pat: &str) -> bool {
+  return pat == "*" || match_pattern(text, pat);
 }
 
 fn match_pattern(txt: &str, pat: &str) -> bool {
@@ -268,10 +283,6 @@ fn match_expression(text: &str, pat: &str, allow_poison: bool) -> Uwildmat {
 
 #[cfg(test)]
 mod tests {
-  use crate::poison::uwildmat as poison;
-  use crate::regular::uwildmat as regular;
-  use crate::simple::uwildmat as simple;
-
   use super::*;
 
   #[allow(unused_macros)]
