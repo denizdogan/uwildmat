@@ -126,6 +126,7 @@ use std::str::from_utf8_unchecked;
 const UWILDMAT_MATCH: Uwildmat = Uwildmat::Match;
 const UWILDMAT_FAIL: Uwildmat = Uwildmat::Fail;
 const UWILDMAT_POISON: Uwildmat = Uwildmat::Poison;
+#[inline]
 pub(crate) fn run_inn_test_suite(
   test_r: fn(usize, &str, &str, bool),
   test_p: fn(usize, &str, &str, Uwildmat),

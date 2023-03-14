@@ -5,16 +5,19 @@ use uwildmat::{poison, regular, simple, Uwildmat};
 include!(concat!(env!("OUT_DIR"), "/gen_test_suite.rs"));
 
 // test_r in INN
+#[inline]
 fn bench_regular(_n: usize, value: &str, pattern: &str, _expected: bool) {
   regular(&value, &pattern);
 }
 
 // test_p in INN
+#[inline]
 fn bench_poison(_n: usize, value: &str, pattern: &str, _expected: Uwildmat) {
   poison(&value, &pattern);
 }
 
 // test_s in INN
+#[inline]
 fn bench_simple(_n: usize, value: &str, pattern: &str, _expected: bool) {
   simple(&value, &pattern);
 }
