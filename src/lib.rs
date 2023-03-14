@@ -3,9 +3,9 @@
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Uwildmat {
   #[default]
-  Fail = 0,
-  Match = 1,
-  Poison = 2,
+  Fail,
+  Match,
+  Poison,
 }
 
 impl std::fmt::Display for Uwildmat {
@@ -24,10 +24,6 @@ impl Into<bool> for Uwildmat {
   }
 }
 
-impl Into<u8> for Uwildmat {
-  fn into(self) -> u8 {
-    self as u8
-  }
 #[inline]
 pub fn regular(text: &str, pat: &str) -> bool {
   pat == "*" || match_expression(text, pat, false).into()
@@ -383,12 +379,5 @@ mod tests {
     assert_eq!(false, Uwildmat::Fail.into());
     assert_eq!(true, Uwildmat::Match.into());
     assert_eq!(false, Uwildmat::Poison.into());
-  }
-
-  #[test]
-  fn into_u8() {
-    assert_eq!(0 as u8, Uwildmat::Fail.into());
-    assert_eq!(1 as u8, Uwildmat::Match.into());
-    assert_eq!(2 as u8, Uwildmat::Poison.into());
   }
 }
