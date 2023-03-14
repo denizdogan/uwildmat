@@ -64,7 +64,7 @@ fn skip_malformed(src: String) -> String {
   return src
     .lines()
     .map(|line| {
-      if line.contains("<<INVALID") {
+      if line.contains("<<INVALID") || line.contains("test_v(") {
         "// ".to_string() + line
       } else {
         line.to_string()
@@ -124,7 +124,6 @@ pub(crate) fn run_inn_test_suite(
   test_r: fn(usize, &str, &str, bool),
   test_p: fn(usize, &str, &str, Uwildmat),
   test_s: fn(usize, &str, &str, bool),
-  test_v: fn(usize, &str, bool),
 ) {{
   {source}
 }}

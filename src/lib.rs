@@ -1,3 +1,5 @@
+use std::{fmt, str::Chars};
+
 #[derive(Clone, Copy, Debug, Default, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum Uwildmat {
   #[default]
@@ -6,8 +8,8 @@ pub enum Uwildmat {
   Poison,
 }
 
-impl std::fmt::Display for Uwildmat {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Uwildmat {
+  fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match self {
       Uwildmat::Fail => write!(f, "Fail"),
       Uwildmat::Match => write!(f, "Match"),
@@ -33,252 +35,199 @@ impl From<bool> for Uwildmat {
 }
 
 #[inline(always)]
-pub fn regular(text: &str, pat: &str) -> bool {
-  pat == "*" || match_expression(text, pat, false).into()
+pub fn regular(text: &str, pattern: &str) -> bool {
+  pattern == "*" || match_expr(text, pattern, false).into()
 }
 
 #[inline(always)]
-pub fn simple(text: &str, pat: &str) -> bool {
-  return pat == "*" || match_pattern(text, pat);
+pub fn simple(text: &str, pattern: &str) -> bool {
+  pattern == "*" || match_str(text, pattern)
 }
 
 #[inline(always)]
-pub fn poison(text: &str, pat: &str) -> Uwildmat {
-  return if pat == "*" {
+pub fn poison(text: &str, pattern: &str) -> Uwildmat {
+  if pattern == "*" {
     Uwildmat::Match
   } else {
-    return match_expression(text, pat, true);
+    match_expr(text, pattern, true)
+  }
+}
+
+#[inline]
+fn match_expr(text: &str, expr: &str, allow_poison: bool) -> Uwildmat {
+  if expr.is_empty() {
+    return text.is_empty().into();
+  }
+
+  let mut start = 0;
+  let mut negate = false;
+  let mut poison = false;
+  let mut poisoned = false;
+  let mut matched = false;
+  let mut it = expr.char_indices();
+
+  while let Some((idx, curr)) = it.next() {
+    match curr {
+      '[' => {
+        it.by_ref().skip_while(|(_, c)| *c != ']').count();
+      }
+      '\\' => {
+        it.next();
+      }
+      '!' if start == idx => {
+        negate = true;
+        start = idx + 1;
+      }
+      '@' if start == idx && allow_poison => {
+        negate = true;
+        poison = true;
+        start = idx + 1;
+      }
+      ',' => {
+        if match_str(text.chars().as_str(), &expr[start..idx]) {
+          matched = !negate;
+          poisoned = poison;
+        }
+        start = idx + 1;
+        negate = false;
+        poison = false;
+      }
+      _ => {}
+    }
+  }
+
+  // match the rest of the expression.
+  // (we will get here if there are no commas in the expression!)
+  let rest = match_str(text.chars().as_str(), &expr[start..]);
+  if rest {
+    matched = !negate;
+    poisoned = poison;
+  }
+  return if poisoned {
+    Uwildmat::Poison
+  } else if matched {
+    Uwildmat::Match
+  } else {
+    Uwildmat::Fail
   };
 }
 
 #[inline]
-fn match_pattern(txt: &str, pat: &str) -> bool {
-  let mut pat_i: usize = 0;
-  let mut txt_i: usize = 0;
-  let pat_len = pat.chars().count();
+fn match_str(text: &str, pattern: &str) -> bool {
+  match_chars(&mut text.chars(), &mut pattern.chars())
+}
 
-  while pat_i < pat_len {
-    match pat.chars().nth(pat_i) {
-      None => {
-        panic!("unexpected end of pattern")
+#[inline]
+fn match_chars(text: &mut Chars, pattern: &mut Chars) -> bool {
+  while let Some(curr) = pattern.next() {
+    match curr {
+      '?' => {
+        text.next();
       }
 
-      // match any character.
-      Some('?') => {
-        txt_i += 1;
-        pat_i += 1;
-      }
-
-      // escape next pattern character.
-      // this is the only place where we need to care about escaping.
-      Some('\\') => match pat.chars().nth(pat_i + 1) {
-        None => return false,
-        Some(c) => {
-          if txt.chars().nth(txt_i) != Some(c) {
-            return false;
-          }
-          txt_i += 1;
-          pat_i += 2;
-        }
+      '\\' => match pattern.next() {
+        Some(c) if text.next() == Some(c) => {}
+        _ => return false,
       },
 
-      // match zero or more characters.
-      Some('*') => {
-        // skip this * and skip any subsequent *'s
-        pat_i += 1;
-        while pat.chars().nth(pat_i) == Some('*') {
-          pat_i += 1;
-        }
-
-        // if end was reached, we matched!
-        if pat.chars().nth(pat_i).is_none() {
+      '*' => {
+        // skip subsequent *'s
+        let next = pattern.skip_while(|p| *p == '*').next();
+        if next.is_none() {
           return true;
         }
 
-        // check if remaining pattern matches any tail of txt
-        for txt_j in txt_i..txt.len() {
-          if txt.is_char_boundary(txt_j) {
-            if match_pattern(&txt[txt_j..], &pat[pat_i..]) {
-              return true;
-            }
+        // reconstruct the pattern by putting back `next`
+        let full_pattern: String =
+          next.into_iter().chain(pattern).collect::<String>();
+
+        // match remaining text against remaining pattern
+        if match_chars(&mut text.clone(), &mut full_pattern.chars()) {
+          return true;
+        }
+
+        // match each text tail against remaining pattern
+        while text.next().is_some() {
+          if match_chars(&mut text.clone(), &mut full_pattern.chars()) {
+            return true;
           }
+        }
+
+        // match empty text against remaining pattern
+        if match_chars(&mut text.clone(), &mut full_pattern.chars()) {
+          return true;
         }
 
         // no match
         return false;
       }
-      Some('[') => {
-        // fail if no more pattern chars
-        if pat_i + 1 >= pat_len {
-          return false;
-        }
 
+      '[' => {
         // check the next text char
-        match txt.chars().nth(txt_i) {
+        match text.next() {
           None => return false,
-          Some(txt_ch) => {
-            // `negate` is true if the character set is negated.
-            // `q` is the index of the first char in the character set, skipping
-            // over any leading '^' character.
-            let negate = pat.chars().nth(pat_i + 1).unwrap() == '^';
-            let q = pat_i + (negate as usize) + 1;
-            if q >= pat_len {
+          Some(want) => {
+            let mut negate = false;
+            let mut ended = false;
+            let set: String = pattern
+              .enumerate()
+              .map(|(i, c)| {
+                if i == 0 {
+                  negate = c == '^';
+                  return Ok(if negate { None } else { Some(c) });
+                } else if i == 1 && negate || c != ']' {
+                  return Ok(Some(c));
+                } else {
+                  ended = true;
+                  return Err(());
+                }
+              })
+              .take_while(Result::is_ok)
+              .filter_map(Result::unwrap)
+              .collect();
+            // if `ended` is false, the set was never closed, i.e. malformed
+            if !ended || !match_set(want, &set, negate) {
               return false;
             }
-
-            // find the offset of the closing bracket from the opening bracket.
-            // start looking at q + 1 to prevent problems with "[]]".
-            let o_end_offset = pat.chars().skip(q + 1).position(|c| c == ']');
-            if o_end_offset.is_none() {
-              return false;
-            }
-
-            // `end_idx` = index of matching ']'
-            // we add 1 because `opt_end_off` will have an offset of -1.
-            let end_idx = o_end_offset.unwrap() + q + 1;
-            let set: String = pat.chars().skip(q).take(end_idx - q).collect();
-            if !match_class(txt_ch, &set, negate) {
-              return false;
-            }
-
-            pat_i = end_idx + 1; // move past the closing bracket
-            txt_i += 1; // one char was consumed
           }
         }
       }
-      Some(ch) => {
-        if txt.chars().nth(txt_i) == Some(ch) {
-          pat_i += 1;
-          txt_i += 1;
-        } else {
+
+      ch => {
+        if text.next() != Some(ch) {
           return false;
         }
       }
     }
   }
 
-  // text ended BEFORE pattern ended.
-  return txt_i == txt.chars().count();
+  // check that the entire text was consumed
+  return text.next().is_none();
 }
 
 #[inline]
-fn match_class(txt_ch: char, set: &str, negate: bool) -> bool {
-  let set_len = set.chars().count();
-  let mut min_ch: char = '\0';
-  let mut allow_hyphen = false;
-  let mut set_i = 0;
-  while set_i < set_len {
-    if allow_hyphen
-      && set_i < set_len - 1
-      && set.chars().nth(set_i) == Some('-')
-    {
-      let max_ch = set.chars().nth(set_i + 1).unwrap();
-      if txt_ch >= min_ch && txt_ch <= max_ch {
-        return !negate;
+fn match_set(want: char, set: &str, negate: bool) -> bool {
+  let mut chars = set.chars();
+  let mut min_char = None;
+  while let Some(curr) = chars.next() {
+    if curr == '-' {
+      if let Some(min) = min_char {
+        if let Some(max) = chars.next() {
+          if (min..=max).contains(&want) {
+            return !negate;
+          } else {
+            min_char = None;
+            continue;
+          }
+        }
       }
-      allow_hyphen = false;
-      set_i += 2;
-    } else {
-      min_ch = set.chars().nth(set_i).unwrap();
-      if txt_ch == min_ch {
-        return !negate;
-      }
-      allow_hyphen = true;
-      set_i += 1;
     }
+    if want == curr {
+      return !negate;
+    }
+    min_char = Some(curr);
   }
   return negate;
-}
-
-#[inline]
-fn match_expression(text: &str, pat: &str, allow_poison: bool) -> Uwildmat {
-  if pat.is_empty() {
-    return text.is_empty().into();
-  }
-
-  let mut pat_start_i = 0;
-  let mut invert = false;
-  let mut poison = false;
-  let mut poisoned = false;
-  let mut escape = false;
-  let mut matched: bool = false;
-  let mut brack_st: i8 = -1;
-  for (i, p) in pat.char_indices() {
-    match p {
-      '[' => {
-        // unless this is escaped, prepare a set.
-        if !escape {
-          brack_st = 0;
-        }
-      }
-      ']' => {
-        // close the set only if this is NOT the first char.
-        // otherwise, open it.
-        if brack_st == 0 {
-          brack_st = 1;
-        } else {
-          brack_st = -1;
-        }
-      }
-      '\\' => {
-        // if inside a set, \ is just a regular char.
-        if brack_st == -1 {
-          // if already escaping, we just escaped a backslash.
-          // otherwise, we start escaping now.
-          escape = !escape;
-        }
-      }
-      '!' => {
-        if pat_start_i == i {
-          invert = true;
-          pat_start_i = i + 1;
-        }
-      }
-      '@' => {
-        // if poison is allowed, this moves the start index forward. otherwise,
-        // it's just a regular char.
-        if pat_start_i == i && allow_poison {
-          invert = true;
-          poison = true;
-          pat_start_i = i + 1;
-        }
-      }
-      ',' => {
-        if brack_st > -1 {
-          // if we're in a set, this is just a regular char.
-          brack_st = 1;
-        } else if !escape {
-          // unless escaped, this is a separator.
-          if match_pattern(text.chars().as_str(), &pat[pat_start_i..i]) {
-            matched = !invert;
-            poisoned = poison;
-          }
-          pat_start_i = i + 1;
-          invert = false;
-          poison = false;
-        } else {
-          // we were actually escaped...
-          escape = false;
-        }
-      }
-      _ => {
-        escape = false;
-      }
-    }
-  }
-
-  let m: bool = match_pattern(text.chars().as_str(), &pat[pat_start_i..]);
-  if m {
-    matched = !invert;
-    poisoned = poison;
-  }
-  if poisoned {
-    return Uwildmat::Poison;
-  }
-  if matched {
-    return Uwildmat::Match;
-  }
-  return Uwildmat::Fail;
 }
 
 #[cfg(test)]
@@ -324,15 +273,9 @@ mod tests {
     );
   }
 
-  // test_v in INN validates that a byte sequence is valid utf-8. we don't
-  // support invalid utf-8, so we don't really care.
-  fn test_validate(_n: usize, _value: &str, _expected: bool) {
-    assert_eq!(true, !false);
-  }
-
   #[test]
   fn test_inn_suite() {
-    run_inn_test_suite(test_regular, test_poison, test_simple, test_validate);
+    run_inn_test_suite(test_regular, test_poison, test_simple);
   }
 
   #[test]
@@ -403,6 +346,11 @@ mod tests {
     assert_eq!(false, regular("abc", "ccc"));
     assert_eq!(false, regular("abc,", "abc"));
     assert_eq!(false, regular("abc,", "abc\\,foo,yeah"));
+
+    assert_eq!(true, regular("hello world", "hel*rld"));
+    assert_eq!(true, regular("hello world", "[^]]ello*"));
+    assert_eq!(true, regular("hello world", "[^]-]ello*"));
+    assert_eq!(true, regular("hello world", "hell[^]-]*"));
   }
 
   #[test]

@@ -62,6 +62,22 @@ $ cargo test
 $ cargo bench
 ```
 
+### Benchmarks
+
+When making changes, always check how much it affects the performance first.
+
+Before making changes, get a baseline of the "misc" benchmark group:
+
+```console
+$ cargo bench --bench misc -- --save-baseline before
+```
+
+After making changes, compare the performance against the baseline:
+
+```console
+$ cargo bench --bench misc -- --baseline before
+```
+
 ### Build script
 
 The build script [`src/build.rs`](src/build.rs) downloads the INN uwildmat test
