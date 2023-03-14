@@ -18,5 +18,5 @@ tokio = { version = "1", features = ["full"] }
 criterion = "0.3"
 
 [[bench]]
-name = "inn_test_suite_bench"
+name = "inn_test_suite"
 harness = false
