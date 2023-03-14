@@ -1,5 +1,4 @@
 #![feature(test)]
-extern crate test;
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 pub enum Uwildmat {
