@@ -24,17 +24,17 @@ impl Into<bool> for Uwildmat {
   }
 }
 
-#[inline]
+#[inline(always)]
 pub fn regular(text: &str, pat: &str) -> bool {
   pat == "*" || match_expression(text, pat, false).into()
 }
 
-#[inline]
+#[inline(always)]
 pub fn simple(text: &str, pat: &str) -> bool {
   return pat == "*" || match_pattern(text, pat);
 }
 
-#[inline]
+#[inline(always)]
 pub fn poison(text: &str, pat: &str) -> Uwildmat {
   return if pat == "*" {
     Uwildmat::Match
@@ -43,6 +43,7 @@ pub fn poison(text: &str, pat: &str) -> Uwildmat {
   };
 }
 
+#[inline]
 fn match_pattern(txt: &str, pat: &str) -> bool {
   let mut pat_i: usize = 0;
   let mut txt_i: usize = 0;
@@ -152,6 +153,7 @@ fn match_pattern(txt: &str, pat: &str) -> bool {
   return txt_i == txt.chars().count();
 }
 
+#[inline]
 fn match_class(txt_ch: char, set: &str, negate: bool) -> bool {
   let set_len = set.chars().count();
   let mut min_ch: char = '\0';
@@ -180,6 +182,7 @@ fn match_class(txt_ch: char, set: &str, negate: bool) -> bool {
   return negate;
 }
 
+#[inline]
 fn match_expression(text: &str, pat: &str, allow_poison: bool) -> Uwildmat {
   if pat.is_empty() && text.is_empty() {
     return if allow_poison {
