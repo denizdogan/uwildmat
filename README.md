@@ -47,7 +47,7 @@ allow any byte sequences as input, even if it is invalid UTF-8.
 
 ## Development
 
-Remember to use the nightly toolchain for this project:
+Use the nightly toolchain:
 
 ```console
 $ rustup override set nightly
@@ -61,6 +61,8 @@ $ cargo build
 $ cargo test
 $ cargo bench
 ```
+
+### Build script
 
 The build script [`src/build.rs`](src/build.rs) downloads the INN uwildmat test
 suite and processes it, generating an equivalent Rust test suite.
