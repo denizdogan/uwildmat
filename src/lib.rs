@@ -356,6 +356,30 @@ mod tests {
   }
 
   #[test]
+  fn simple_brackets() {
+    assert_eq!(true, simple("a", "[a-d]"));
+    assert_eq!(true, simple("b", "[a-d]"));
+    assert_eq!(true, simple("c", "[a-d]"));
+    assert_eq!(true, simple("d", "[a-d]"));
+    assert_eq!(true, simple("]", "[]]"));
+    assert_eq!(true, simple("]*", "[]]?"));
+    assert_eq!(true, simple("]*", "[]]*"));
+    assert_eq!(true, simple("a", "[^]]"));
+    assert_eq!(true, simple("a", "[^]-]"));
+    assert_eq!(true, simple("c", "[^]-b]"));
+    assert_eq!(true, simple("a", "[^]]*"));
+    
+    assert_eq!(false, simple("e", "[a-d]"));
+    assert_eq!(false, simple("A", "[a-d]"));
+    assert_eq!(false, simple("c", "[^a-f]"));
+    assert_eq!(false, simple("-", "[^-]"));
+    assert_eq!(false, simple("-", "[^]-]"));
+    assert_eq!(false, simple("-", "[^-]]"));
+    assert_eq!(false, simple("]", "[^]-]"));
+    assert_eq!(false, simple("]", "[^-]]"));
+  }
+
+  #[test]
   fn regular_misc() {
     assert_eq!(true, regular("", ""));
     assert_eq!(true, regular("a", "a"));
