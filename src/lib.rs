@@ -28,11 +28,12 @@ impl Into<u8> for Uwildmat {
   fn into(self) -> u8 {
     self as u8
   }
+#[inline]
+pub fn regular(text: &str, pat: &str) -> bool {
+  pat == "*" || match_expression(text, pat, false).into()
 }
 
 #[inline]
-pub fn regular(text: &str, pat: &str) -> bool {
-  return pat == "*" || match_expression(text, pat, false) == Uwildmat::Match;
 }
 
 #[inline]
