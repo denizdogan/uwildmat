@@ -1,5 +1,4 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-
 use uwildmat::{poison, regular, simple, Uwildmat};
 
 include!(concat!(env!("OUT_DIR"), "/gen_test_suite.rs"));

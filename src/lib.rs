@@ -371,7 +371,7 @@ mod tests {
     assert_eq!(true, simple("a", "[^]-]"));
     assert_eq!(true, simple("c", "[^]-b]"));
     assert_eq!(true, simple("a", "[^]]*"));
-    
+
     assert_eq!(false, simple("e", "[a-d]"));
     assert_eq!(false, simple("A", "[a-d]"));
     assert_eq!(false, simple("c", "[^a-f]"));
