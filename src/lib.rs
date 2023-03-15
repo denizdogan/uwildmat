@@ -22,6 +22,16 @@ impl Into<bool> for Uwildmat {
   }
 }
 
+impl From<bool> for Uwildmat {
+  fn from(val: bool) -> Self {
+    if val {
+      Uwildmat::Match
+    } else {
+      Uwildmat::Fail
+    }
+  }
+}
+
 #[inline(always)]
 pub fn regular(text: &str, pat: &str) -> bool {
   pat == "*" || match_expression(text, pat, false).into()

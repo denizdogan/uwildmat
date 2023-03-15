@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Moved public functions to `uwildmat::*`
 
+### Added
+
+- Implement `From<bool>` for `Uwildmat`
+
 ## [0.2.0] - 2023-03-12
 
 ### Added
