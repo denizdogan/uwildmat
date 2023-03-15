@@ -3,6 +3,7 @@ use std::env;
 use std::fs;
 use std::path::Path;
 use std::str;
+use std::str::from_utf8;
 
 use regex::Captures;
 use regex::Regex;
@@ -24,14 +25,14 @@ async fn main() {
   // put multiline statements on single lines
   let single_lines = c_tests.replace(",\n", ", ");
 
-  // skip malformed utf-8 byte sequences
-  let no_malformed = skip_malformed(single_lines);
-
   // replace C byte string sequences with from_utf8_unchecked calls
-  let rustified = to_unchecked_calls(no_malformed);
+  let rustified = to_unchecked_calls(single_lines);
+
+  // skip malformed utf-8 byte sequences
+  let no_malformed = skip_malformed(rustified);
 
   // generate rust source code
-  let rust_code = make_rust_source(rustified);
+  let rust_code = make_rust_source(no_malformed);
 
   // write to file
   fs::write(&dest_path, rust_code).unwrap();
@@ -60,24 +61,17 @@ fn extract_suite(c_code: String) -> String {
 // sequence, and if it cannot decode something as utf-8, it will fallback to
 // just using the first octet.
 fn skip_malformed(src: String) -> String {
-  let skipped = [
-    93, 99, 100, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115,
-    116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 168, 169, 170, 171, 172,
-    173, 174,
-  ]
-  .map(|n| format!("({:>3}, ", n));
   return src
     .lines()
     .map(|line| {
-      let is_skipped = skipped.iter().any(|ig| line.contains(ig));
-      if is_skipped {
-        format!("// SKIPPED: // {}", line)
+      if line.contains("<<INVALID") {
+        "// ".to_string() + line
       } else {
         line.to_string()
       }
     })
-    .map(|line| line.to_string() + "\n")
-    .collect();
+    .collect::<Vec<String>>()
+    .join("\n");
 }
 
 fn to_unchecked_calls(src: String) -> String {
@@ -93,12 +87,9 @@ fn to_unchecked_calls(src: String) -> String {
   // for each C string
   let fixed = str_rx.replace_all(&code, |st: &Captures| {
     let content = &st[1];
-    // for each C octet or literal char,
-    // represent it as a u8,
-    // convert the u8 to a string,
-    // then join the strings with ", ",
-    // making e.g. "[97, 98, 99, 100]" from input "abc\100".
-    let replaced = oct_rx
+
+    // convert each octet/literal to u8
+    let bytes: Vec<u8> = oct_rx
       .captures_iter(content)
       .map(|cap| {
         if let Some(oct) = cap.name("oct") {
@@ -109,20 +100,22 @@ fn to_unchecked_calls(src: String) -> String {
           panic!("should never happen, captures: '{:?}'", cap);
         }
       })
-      .map(|b| b.to_string())
-      .intersperse(", ".to_string());
-    // wrap the result in a from_utf8_unchecked call
-    return "from_utf8_unchecked(&[".to_string()
-      + replaced.collect::<String>().as_str()
-      + "])";
+      .collect();
+
+    // verify that it's a valid utf-8 sequence
+    let ser = from_utf8(&bytes);
+    match ser {
+      Ok(s) => format!("r\"{}\"", s),
+      Err(e) => format!("<<INVALID({}):{}>>", e, content),
+    }
   });
+
   return fixed.to_string();
 }
 
 fn make_rust_source(code: String) -> String {
   format!(
     r#"
-use std::str::from_utf8_unchecked;
 const UWILDMAT_MATCH: Uwildmat = Uwildmat::Match;
 const UWILDMAT_FAIL: Uwildmat = Uwildmat::Fail;
 const UWILDMAT_POISON: Uwildmat = Uwildmat::Poison;
@@ -133,13 +126,11 @@ pub(crate) fn run_inn_test_suite(
   test_s: fn(usize, &str, &str, bool),
   test_v: fn(usize, &str, bool),
 ) {{
-  unsafe {{
   {source}
-}};
 }}
 "#,
     source = code
   )
-  .trim()
+  .trim_start()
   .to_string()
 }
