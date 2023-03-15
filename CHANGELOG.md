@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `poison` incorrectly returned `Uwildmat::Poison` when text and pattern were empty
+
 ### Changed
 
 - Moved public functions to `uwildmat::*`

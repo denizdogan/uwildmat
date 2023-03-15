@@ -192,12 +192,8 @@ fn match_class(txt_ch: char, set: &str, negate: bool) -> bool {
 
 #[inline]
 fn match_expression(text: &str, pat: &str, allow_poison: bool) -> Uwildmat {
-  if pat.is_empty() && text.is_empty() {
-    return if allow_poison {
-      Uwildmat::Poison
-    } else {
-      Uwildmat::Match
-    };
+  if pat.is_empty() {
+    return text.is_empty().into();
   }
 
   let mut pat_start_i = 0;
@@ -407,6 +403,12 @@ mod tests {
     assert_eq!(false, regular("abc", "ccc"));
     assert_eq!(false, regular("abc,", "abc"));
     assert_eq!(false, regular("abc,", "abc\\,foo,yeah"));
+  }
+
+  #[test]
+  fn poison_misc() {
+    assert_eq!(Uwildmat::Match, poison("", ""));
+    assert_eq!(Uwildmat::Fail, poison("", "a"));
   }
 
   #[test]
