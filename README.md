@@ -17,7 +17,7 @@ uwildmat = "0.2"
 
 ```rust
 // your_code.rs
-use uwildmat::simple::uwildmat as uwildmat;
+use uwildmat::simple as uwildmat;
 
 let text = "foo";
 let pattern = "*foo*";
@@ -25,7 +25,7 @@ asserteq!(uwildmat(text, pattern), true);
 
 // or:
 
-use uwildmat::regular::uwildmat as uwildmat;
+use uwildmat::regular as uwildmat;
 
 let text = "foo";
 let pattern = "*foo*";
@@ -33,7 +33,7 @@ asserteq!(uwildmat(text, pattern), true);
 
 // or:
 
-use uwildmat::poison::uwildmat as uwildmat;
+use uwildmat::poison as uwildmat;
 
 let text = "foo";
 let pattern = "*foo*";
