@@ -131,35 +131,25 @@ fn match_chars(text: &mut Chars, pattern: &mut Chars) -> bool {
       },
 
       '*' => {
-        // skip subsequent *'s
+        // skip subsequent *'s.  if the rest of the pattern is empty, or if it
+        // consists of *'s only, it matches anything.
         let next = pattern.skip_while(|p| *p == '*').next();
         if next.is_none() {
           return true;
         }
 
-        // reconstruct the pattern by putting back `next`
-        let full_pattern: String =
-          next.into_iter().chain(pattern).collect::<String>();
+        // reconstruct the pattern by putting back `next` (which we just
+        // consumed by checking for `None`).
+        let rest = next.into_iter().chain(pattern).collect::<String>();
 
-        // match remaining text against remaining pattern
-        if match_chars(&mut text.clone(), &mut full_pattern.chars()) {
-          return true;
-        }
-
-        // match each text tail against remaining pattern
-        while text.next().is_some() {
-          if match_chars(&mut text.clone(), &mut full_pattern.chars()) {
+        // return if `text`, or any tail of `text`, matches.
+        return text.clone().any(|_c| {
+          if match_chars(&mut text.clone(), &mut rest.chars()) {
             return true;
           }
-        }
-
-        // match empty text against remaining pattern
-        if match_chars(&mut text.clone(), &mut full_pattern.chars()) {
-          return true;
-        }
-
-        // no match
-        return false;
+          text.next();
+          return false;
+        });
       }
 
       '[' => {
@@ -336,7 +326,6 @@ mod tests {
     assert_eq!(true, regular("abc", "abc"));
     assert_eq!(true, regular("abc,", "abc\\,"));
     assert_eq!(true, regular("abc,", "abc\\,,foo"));
-    assert_eq!(true, regular("foo", "*foo*"));
 
     assert_eq!(false, regular("abc", ""));
     assert_eq!(false, regular("abc", "a"));
@@ -346,6 +335,20 @@ mod tests {
     assert_eq!(false, regular("abc", "ccc"));
     assert_eq!(false, regular("abc,", "abc"));
     assert_eq!(false, regular("abc,", "abc\\,foo,yeah"));
+
+    assert_eq!(true, regular("", "*"));
+    assert_eq!(true, regular("*", "*"));
+    assert_eq!(true, regular("*", "\\*"));
+    assert_eq!(true, regular("foo", "*"));
+    assert_eq!(true, regular("foo", "foo*"));
+    assert_eq!(true, regular("foo", "*foo"));
+    assert_eq!(true, regular("foo", "*foo*"));
+    assert_eq!(true, regular("foo*", "*\\*"));
+    assert_eq!(true, regular("foo*", "*\\**"));
+    assert_eq!(true, regular("foobar", "*foo*"));
+    assert_eq!(true, regular("foobar", "foo*"));
+    assert_eq!(true, regular("foobar", "*bar"));
+    assert_eq!(true, regular("foobar", "*ooba*"));
 
     assert_eq!(true, regular("hello world", "hel*rld"));
     assert_eq!(true, regular("hello world", "[^]]ello*"));
