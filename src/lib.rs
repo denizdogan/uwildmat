@@ -153,7 +153,8 @@ fn match_chars(text: &mut Chars, pattern: &mut Chars) -> bool {
       }
 
       '[' => {
-        // check the next text char
+        // if the text is empty, fail. otherwise, parse the character set within
+        // the brackets and check that the set matches the next character.
         match text.next() {
           None => return false,
           Some(want) => {
